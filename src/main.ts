@@ -1,4 +1,4 @@
-import {vec3} from 'gl-matrix';
+import {vec2, vec3, vec4, mat4} from 'gl-matrix';
 import * as Stats from 'stats-js';
 import * as DAT from 'dat-gui';
 import Square from './geometry/Square';
@@ -56,6 +56,11 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/raymarch-frag.glsl')),
   ]);
 
+  // timer variable
+  var timer = 0;
+
+
+
   // This function will be called every frame
   function tick() {
     camera.update();
@@ -64,8 +69,19 @@ function main() {
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // TODO: get / calculate relevant uniforms to send to shader here
-    // TODO: send uniforms to shader
+    // set uniform attributes
+    raymarchShader.setTime(timer);
+    raymarchShader.setEye(vec4.fromValues(camera.position[0], camera.position[1], camera.position[2], 1.0));
+                              
+    raymarchShader.setView(camera.viewMatrix);
+    raymarchShader.setProj(camera.projectionMatrix);
+    
+    let viewProj : mat4 = mat4.create();
+    mat4.multiply(viewProj, camera.projectionMatrix, camera.viewMatrix);
+    raymarchShader.setViewProjMatrix(viewProj);
+    raymarchShader.setFov(camera.fovy);
+    raymarchShader.setDimension(vec2.fromValues(window.innerWidth, window.innerHeight));
+    raymarchShader.setFar(camera.far);
 
     // March!
     raymarchShader.draw(screenQuad);
@@ -74,6 +90,7 @@ function main() {
 
     stats.end();
 
+    timer++;
     // Tell the browser to call `tick` again whenever it renders a new frame
     requestAnimationFrame(tick);
   }
